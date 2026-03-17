@@ -22,6 +22,7 @@ import StudentDashboard from './pages/StudentDashboard';
 import CourseDetailPage from './pages/CourseDetailPage';
 import ModulePlayerPage from './pages/ModulePlayerPage';
 import CoachPage from './pages/CoachPage';
+import FlagshipEventPage from './pages/FlagshipEventPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
 // Setup check wrapper
@@ -117,6 +118,7 @@ function App() {
             <Route path="/courses" element={<SetupCheck><CoursesPage /></SetupCheck>} />
             <Route path="/course/:courseId" element={<SetupCheck><CourseDetailPage /></SetupCheck>} />
             <Route path="/coach" element={<SetupCheck><CoachPage /></SetupCheck>} />
+            <Route path="/flagship/:eventId" element={<SetupCheck><FlagshipEventPage /></SetupCheck>} />
 
             {/* Auth routes */}
             <Route path="/login" element={<SetupCheck><LoginPage /></SetupCheck>} />

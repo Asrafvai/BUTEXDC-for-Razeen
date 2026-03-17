@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getHomepageContent, getLeadership, getAnnouncements, getSuccessEvents, getEvents } from '../lib/api';
+import { getHomepageContent, getLeadership, getAnnouncements, getSuccessEvents, getEvents, getFlagshipEvents } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
-import { ArrowRight, Users, Trophy, BookOpen, Sun, Moon, Calendar, Facebook } from 'lucide-react';
+import { ArrowRight, Users, Trophy, BookOpen, Sun, Moon, Calendar, Star } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
@@ -17,6 +17,7 @@ const HomePage = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [successStories, setSuccessStories] = useState([]);
   const [events, setEvents] = useState([]);
+  const [flagshipEvents, setFlagshipEvents] = useState([]);
   const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -25,12 +26,13 @@ const HomePage = () => {
 
   const loadData = async () => {
     try {
-      const [contentRes, leadershipRes, announcementsRes, successRes, eventsRes] = await Promise.all([
+      const [contentRes, leadershipRes, announcementsRes, successRes, eventsRes, flagshipRes] = await Promise.all([
         getHomepageContent(),
         getLeadership(),
         getAnnouncements(),
         getSuccessEvents(),
-        getEvents()
+        getEvents(),
+        getFlagshipEvents()
       ]);
       
       const contentMap = {};
@@ -42,6 +44,7 @@ const HomePage = () => {
       setAnnouncements(announcementsRes.data.slice(0, 3));
       setSuccessStories(successRes.data.slice(0, 5));
       setEvents(eventsRes.data.slice(0, 6));
+      setFlagshipEvents(flagshipRes.data);
     } catch (error) {
       console.error('Failed to load homepage data:', error);
     }
@@ -112,6 +115,51 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Flagship Events */}
+      {flagshipEvents.length > 0 && (
+        <section className={`py-16 ${isDark ? 'bg-black/30' : 'bg-gray-50/50'}`}>
+          <div className="max-w-7xl mx-auto px-6">
+            <h2 className={`text-4xl font-bold text-center mb-4 ${isDark ? 'text-white' : 'text-[#1A1A1A]'}`} data-testid="flagship-section-title">
+              <Star className="inline h-8 w-8 text-[#FF7F00] mr-2 -mt-1" />
+              Flagship Events
+            </h2>
+            <p className={`text-center mb-12 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Our marquee events and upcoming highlights</p>
+            <div className="space-y-10">
+              {flagshipEvents.map(evt => (
+                <Link to={`/flagship/${evt.id}`} key={evt.id} className="block" data-testid={`flagship-card-${evt.id}`}>
+                  <div className={`rounded-2xl overflow-hidden border ${isDark ? 'bg-[#000] border-[#333] hover:border-[#FF7F00]/50' : 'bg-white border-gray-200 hover:border-[#FF7F00]/50'} transition-all group`}>
+                    {evt.photo_url && (
+                      <div className="w-full aspect-[21/9] overflow-hidden">
+                        <img src={evt.photo_url} alt={evt.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                      </div>
+                    )}
+                    <div className="p-8 md:p-10">
+                      <h3 className={`text-3xl md:text-4xl font-bold mb-4 group-hover:text-[#FF7F00] transition-colors ${isDark ? 'text-white' : 'text-[#1A1A1A]'}`}>{evt.title}</h3>
+                      <p className={`text-lg leading-relaxed mb-6 line-clamp-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{evt.details}</p>
+                      <div className="flex flex-wrap gap-3">
+                        {evt.event_link && (
+                          <span className="inline-flex items-center gap-1.5 bg-[#FF7F00] text-black font-medium px-5 py-2.5 rounded-lg text-sm">
+                            Event Link <ArrowRight className="h-4 w-4" />
+                          </span>
+                        )}
+                        {evt.preregister_link && (
+                          <span className="inline-flex items-center gap-1.5 bg-green-600 text-white font-medium px-5 py-2.5 rounded-lg text-sm">
+                            Pre-register Now <ArrowRight className="h-4 w-4" />
+                          </span>
+                        )}
+                        <span className={`inline-flex items-center gap-1.5 text-[#FF7F00] font-medium text-sm`}>
+                          View Details <ArrowRight className="h-4 w-4" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Success Stories Carousel */}
       <section className={`py-16 ${isDark ? 'bg-black/20' : 'bg-gray-50/50'}`}>

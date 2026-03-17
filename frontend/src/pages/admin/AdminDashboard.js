@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../../components/ui/button';
 import { 
   Users, BookOpen, Bell, Trophy, Home, BarChart, LogOut, 
-  UserCog, FileEdit, GraduationCap, Menu, X 
+  UserCog, FileEdit, GraduationCap, Menu, X, Star 
 } from 'lucide-react';
 
 // Import admin sections (we'll create simplified versions)
@@ -19,6 +19,7 @@ import CoachManagement from './CoachManagement';
 import AlumniManagement from './AlumniManagement';
 import EventsManagement from './EventsManagement';
 import MembershipManagement from './MembershipManagement';
+import FlagshipManagement from './FlagshipManagement';
 
 const AdminDashboard = () => {
   const { user, logoutUser } = useAuth();
@@ -28,6 +29,7 @@ const AdminDashboard = () => {
 
   const navItems = [
     { path: '/admin', label: 'Overview', icon: BarChart },
+    { path: '/admin/flagship', label: 'Flagship Events', icon: Star },
     { path: '/admin/success', label: 'Success Events', icon: Trophy },
     { path: '/admin/coach', label: 'Coach Info', icon: GraduationCap },
     { path: '/admin/users', label: 'Users', icon: Users },
@@ -112,6 +114,7 @@ const AdminDashboard = () => {
         <div className="p-6 md:p-8">
           <Routes>
             <Route index element={<AnalyticsDashboard />} />
+            <Route path="flagship" element={<FlagshipManagement />} />
             <Route path="users" element={<UsersManagement />} />
             <Route path="leadership" element={<LeadershipManagement />} />
             <Route path="alumni" element={<AlumniManagement />} />

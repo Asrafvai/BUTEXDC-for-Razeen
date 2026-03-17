@@ -240,6 +240,39 @@ class MembershipContentUpdate(BaseModel):
     description: str
     form_link: str
 
+class FlagshipEvent(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    title: str
+    photo_url: Optional[str] = None
+    details: str
+    event_link: Optional[str] = None
+    preregister_link: Optional[str] = None
+    archived: bool = False
+    created_at: str
+
+class FlagshipEventCreate(BaseModel):
+    title: str
+    photo_url: Optional[str] = None
+    details: str
+    event_link: Optional[str] = None
+    preregister_link: Optional[str] = None
+
+class FlagshipAnnouncement(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    flagship_event_id: str
+    title: str
+    photo_url: Optional[str] = None
+    details: str
+    archived: bool = False
+    created_at: str
+
+class FlagshipAnnouncementCreate(BaseModel):
+    title: str
+    photo_url: Optional[str] = None
+    details: str
+
 class SystemSetup(BaseModel):
     is_setup_complete: bool
 
@@ -1171,6 +1204,100 @@ async def toggle_advanced_access(user_id: str, grant: bool, current_user: dict =
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": f"Advanced course access {'granted' if grant else 'revoked'}"}
+
+# =============== FLAGSHIP EVENTS ===============
+
+@api_router.get("/flagship-events", response_model=List[FlagshipEvent])
+async def get_flagship_events():
+    events = await db.flagship_events.find({"archived": False}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [FlagshipEvent(**e) for e in events]
+
+@api_router.get("/flagship-events/{event_id}")
+async def get_flagship_event(event_id: str):
+    event = await db.flagship_events.find_one({"id": event_id, "archived": False}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=404, detail="Flagship event not found")
+    announcements = await db.flagship_announcements.find({"flagship_event_id": event_id, "archived": False}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return {**FlagshipEvent(**event).model_dump(), "announcements": [FlagshipAnnouncement(**a).model_dump() for a in announcements]}
+
+@api_router.post("/admin/flagship-events", response_model=FlagshipEvent)
+async def create_flagship_event(data: FlagshipEventCreate, current_user: dict = Depends(require_admin)):
+    doc = {
+        "id": generate_id(),
+        "title": data.title,
+        "photo_url": data.photo_url,
+        "details": data.details,
+        "event_link": data.event_link,
+        "preregister_link": data.preregister_link,
+        "archived": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.flagship_events.insert_one(doc)
+    return FlagshipEvent(**doc)
+
+@api_router.put("/admin/flagship-events/{event_id}", response_model=FlagshipEvent)
+async def update_flagship_event(event_id: str, data: FlagshipEventCreate, current_user: dict = Depends(require_admin)):
+    result = await db.flagship_events.update_one(
+        {"id": event_id},
+        {"$set": {
+            "title": data.title,
+            "photo_url": data.photo_url,
+            "details": data.details,
+            "event_link": data.event_link,
+            "preregister_link": data.preregister_link,
+        }}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Flagship event not found")
+    event = await db.flagship_events.find_one({"id": event_id}, {"_id": 0})
+    return FlagshipEvent(**event)
+
+@api_router.patch("/admin/flagship-events/{event_id}/archive")
+async def archive_flagship_event(event_id: str, current_user: dict = Depends(require_admin)):
+    result = await db.flagship_events.update_one({"id": event_id}, {"$set": {"archived": True}})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Flagship event not found")
+    return {"message": "Flagship event archived"}
+
+@api_router.get("/flagship-events/{event_id}/announcements", response_model=List[FlagshipAnnouncement])
+async def get_flagship_announcements(event_id: str):
+    announcements = await db.flagship_announcements.find({"flagship_event_id": event_id, "archived": False}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [FlagshipAnnouncement(**a) for a in announcements]
+
+@api_router.post("/admin/flagship-events/{event_id}/announcements", response_model=FlagshipAnnouncement)
+async def create_flagship_announcement(event_id: str, data: FlagshipAnnouncementCreate, current_user: dict = Depends(require_admin)):
+    event = await db.flagship_events.find_one({"id": event_id}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=404, detail="Flagship event not found")
+    doc = {
+        "id": generate_id(),
+        "flagship_event_id": event_id,
+        "title": data.title,
+        "photo_url": data.photo_url,
+        "details": data.details,
+        "archived": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.flagship_announcements.insert_one(doc)
+    return FlagshipAnnouncement(**doc)
+
+@api_router.put("/admin/flagship-announcements/{ann_id}", response_model=FlagshipAnnouncement)
+async def update_flagship_announcement(ann_id: str, data: FlagshipAnnouncementCreate, current_user: dict = Depends(require_admin)):
+    result = await db.flagship_announcements.update_one(
+        {"id": ann_id},
+        {"$set": {"title": data.title, "photo_url": data.photo_url, "details": data.details}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    ann = await db.flagship_announcements.find_one({"id": ann_id}, {"_id": 0})
+    return FlagshipAnnouncement(**ann)
+
+@api_router.patch("/admin/flagship-announcements/{ann_id}/archive")
+async def archive_flagship_announcement(ann_id: str, current_user: dict = Depends(require_admin)):
+    result = await db.flagship_announcements.update_one({"id": ann_id}, {"$set": {"archived": True}})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    return {"message": "Announcement archived"}
 
 # =============== MAIN APP ===============
 

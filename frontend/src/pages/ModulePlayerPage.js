@@ -4,8 +4,22 @@ import { getCourseModules, getUserProgress, updateProgress } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Checkbox } from '../components/ui/checkbox';
-import { ArrowLeft, FileText, Video } from 'lucide-react';
+import { ArrowLeft, FileText, Video, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+
+const getYouTubeEmbedUrl = (url) => {
+  if (!url) return null;
+  let videoId = null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.includes('youtube.com')) {
+      videoId = parsed.searchParams.get('v');
+    } else if (parsed.hostname === 'youtu.be') {
+      videoId = parsed.pathname.slice(1);
+    }
+  } catch { return null; }
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+};
 
 const ModulePlayerPage = () => {
   const { courseId, moduleId } = useParams();
@@ -24,11 +38,9 @@ const ModulePlayerPage = () => {
         getCourseModules(courseId),
         getUserProgress()
       ]);
-      
       setModules(modulesRes.data);
       const module = modulesRes.data.find(m => m.id === moduleId);
       setCurrentModule(module);
-      
       const progressItem = progressRes.data.find(p => p.module_id === moduleId);
       setIsCompleted(progressItem?.completed || false);
     } catch (error) {
@@ -49,8 +61,7 @@ const ModulePlayerPage = () => {
   const goToNextModule = () => {
     const currentIndex = modules.findIndex(m => m.id === moduleId);
     if (currentIndex < modules.length - 1) {
-      const nextModule = modules[currentIndex + 1];
-      navigate(`/course/${courseId}/module/${nextModule.id}`);
+      navigate(`/course/${courseId}/module/${modules[currentIndex + 1].id}`);
     } else {
       navigate(`/course/${courseId}`);
     }
@@ -59,6 +70,8 @@ const ModulePlayerPage = () => {
   if (!currentModule) {
     return <div className="min-h-screen bg-[#1A1A1A] flex items-center justify-center"><div className="text-[#FF7F00]">Loading...</div></div>;
   }
+
+  const embedUrl = getYouTubeEmbedUrl(currentModule.video_link);
 
   return (
     <div className="min-h-screen bg-[#1A1A1A]">
@@ -69,38 +82,57 @@ const ModulePlayerPage = () => {
           </Button>
         </Link>
 
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4" data-testid="module-title">{currentModule.title}</h1>
+        <div className="mb-6">
+          <h1 className="text-4xl font-bold mb-2" data-testid="module-title">{currentModule.title}</h1>
           {currentModule.duration && (
-            <p className="text-gray-400">Duration: {currentModule.duration}</p>
+            <p className="text-gray-400 text-sm">Duration: {currentModule.duration}</p>
           )}
         </div>
 
+        {/* Video Section */}
         {currentModule.video_link && (
-          <Card className="bg-[#000000] border-[#333333] mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Video className="h-6 w-6 text-[#FF7F00]" />
-                <h3 className="text-xl font-semibold">Video Content</h3>
+          <div className="mb-6">
+            {embedUrl ? (
+              <div className="aspect-video rounded-xl overflow-hidden bg-black" data-testid="video-embed">
+                <iframe
+                  src={embedUrl}
+                  title={currentModule.title}
+                  className="w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
               </div>
-              <div className="aspect-video bg-[#252525] rounded-lg flex items-center justify-center">
-                <a href={currentModule.video_link} target="_blank" rel="noopener noreferrer" className="text-[#FF7F00] hover:underline" data-testid="video-link">
-                  Open Video Link
-                </a>
-              </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <Card className="bg-[#000000] border-[#333333]">
+                <CardContent className="p-8 text-center">
+                  <Video className="h-12 w-12 text-[#FF7F00] mx-auto mb-3" />
+                  <a href={currentModule.video_link} target="_blank" rel="noopener noreferrer" className="text-[#FF7F00] hover:underline text-lg" data-testid="video-link">
+                    Open Video
+                  </a>
+                </CardContent>
+              </Card>
+            )}
+            <div className="mt-2 flex justify-end">
+              <a href={currentModule.video_link} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-[#FF7F00] flex items-center gap-1 transition-colors" data-testid="open-youtube-link">
+                <ExternalLink className="h-3.5 w-3.5" /> Open in YouTube
+              </a>
+            </div>
+          </div>
         )}
 
+        {/* PDF Notes */}
         {currentModule.pdf_link && (
-          <Card className="bg-[#000000] border-[#333333] mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-4">
+          <Card className="bg-[#000000] border-[#333333] mb-6" data-testid="pdf-section">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
                 <FileText className="h-6 w-6 text-[#FF7F00]" />
-                <h3 className="text-xl font-semibold">PDF Materials</h3>
+                <span className="text-lg font-medium">Module Notes</span>
               </div>
-              <a href={currentModule.pdf_link} target="_blank" rel="noopener noreferrer" className="text-[#FF7F00] hover:underline" data-testid="pdf-link">
-                Open PDF Document
+              <a href={currentModule.pdf_link} target="_blank" rel="noopener noreferrer" data-testid="pdf-link">
+                <Button className="bg-[#FF7F00] text-black hover:bg-[#E67300] gap-2">
+                  <FileText className="h-4 w-4" /> Open PDF
+                </Button>
               </a>
             </CardContent>
           </Card>

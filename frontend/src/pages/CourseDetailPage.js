@@ -4,7 +4,7 @@ import { getCourse, getCourseModules, getUserProgress } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
-import { ArrowLeft, PlayCircle, CheckCircle, Circle, Clock, Lock } from 'lucide-react';
+import { ArrowLeft, PlayCircle, CheckCircle, Circle, Clock, Lock, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CourseDetailPage = () => {
@@ -122,11 +122,26 @@ const CourseDetailPage = () => {
                       </div>
                     )}
                   </div>
-                  {user ? (
-                    <PlayCircle className="h-8 w-8 text-[#FF7F00]" />
-                  ) : (
-                    <span className="text-xs text-gray-500">Sign up to access</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {user && module.pdf_link && (
+                      <a
+                        href={module.pdf_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        data-testid={`notes-btn-${module.id}`}
+                      >
+                        <Button size="sm" variant="outline" className="border-[#FF7F00] text-[#FF7F00] hover:bg-[#FF7F00]/10 gap-1.5">
+                          <FileText className="h-4 w-4" /> Notes
+                        </Button>
+                      </a>
+                    )}
+                    {user ? (
+                      <PlayCircle className="h-8 w-8 text-[#FF7F00]" />
+                    ) : (
+                      <span className="text-xs text-gray-500">Sign up to access</span>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}

@@ -109,10 +109,12 @@ export const toggleAdvancedAccess = (userId, grant) => api.patch(`/admin/users/$
 
 // Flagship Events
 export const getFlagshipEvents = () => api.get('/flagship-events');
+export const getActiveFlagshipEvents = () => api.get('/flagship-events/active');
 export const getFlagshipEvent = (eventId) => api.get(`/flagship-events/${eventId}`);
 export const createFlagshipEvent = (data) => api.post('/admin/flagship-events', data);
 export const updateFlagshipEvent = (eventId, data) => api.put(`/admin/flagship-events/${eventId}`, data);
 export const archiveFlagshipEvent = (eventId) => api.patch(`/admin/flagship-events/${eventId}/archive`);
+export const toggleFlagshipEvent = (eventId) => api.patch(`/admin/flagship-events/${eventId}/toggle`);
 export const getFlagshipAnnouncements = (eventId) => api.get(`/flagship-events/${eventId}/announcements`);
 export const createFlagshipAnnouncement = (eventId, data) => api.post(`/admin/flagship-events/${eventId}/announcements`, data);
 export const updateFlagshipAnnouncement = (annId, data) => api.put(`/admin/flagship-announcements/${annId}`, data);

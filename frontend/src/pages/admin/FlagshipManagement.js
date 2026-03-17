@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getFlagshipEvents, createFlagshipEvent, updateFlagshipEvent, archiveFlagshipEvent, createFlagshipAnnouncement, getFlagshipAnnouncements, updateFlagshipAnnouncement, archiveFlagshipAnnouncement } from '../../lib/api';
+import { getFlagshipEvents, createFlagshipEvent, updateFlagshipEvent, archiveFlagshipEvent, toggleFlagshipEvent, createFlagshipAnnouncement, getFlagshipAnnouncements, updateFlagshipAnnouncement, archiveFlagshipAnnouncement } from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -7,7 +7,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Edit, Archive, Star, Bell, ChevronDown, ChevronUp, ExternalLink, FileText } from 'lucide-react';
+import { Plus, Edit, Archive, Star, Bell, ChevronDown, ChevronUp, ExternalLink, FileText, Power } from 'lucide-react';
 
 const FlagshipManagement = () => {
   const [events, setEvents] = useState([]);
@@ -65,6 +65,14 @@ const FlagshipManagement = () => {
   const handleArchive = async (id) => {
     try { await archiveFlagshipEvent(id); toast.success('Archived'); loadEvents(); }
     catch { toast.error('Failed'); }
+  };
+
+  const handleToggle = async (id, currentActive) => {
+    try {
+      await toggleFlagshipEvent(id);
+      toast.success(currentActive ? 'Event hidden from homepage' : 'Event visible on homepage');
+      loadEvents();
+    } catch { toast.error('Failed to toggle'); }
   };
 
   const toggleExpand = async (eventId) => {
@@ -163,7 +171,7 @@ const FlagshipManagement = () => {
 
       <div className="space-y-6">
         {events.map(evt => (
-          <Card key={evt.id} className="bg-[#000000] border-[#333333]" data-testid={`flagship-${evt.id}`}>
+          <Card key={evt.id} className={`bg-[#000000] border-[#333333] ${!evt.active ? 'opacity-60' : ''}`} data-testid={`flagship-${evt.id}`}>
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 {evt.photo_url && <img src={evt.photo_url} alt={evt.title} className="w-20 h-20 rounded-lg object-cover flex-shrink-0" />}
@@ -171,6 +179,7 @@ const FlagshipManagement = () => {
                   <div className="flex items-center gap-2 mb-1">
                     <Star className="h-4 w-4 text-[#FF7F00]" />
                     <h3 className="text-xl font-semibold text-white">{evt.title}</h3>
+                    {!evt.active && <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">Hidden</span>}
                   </div>
                   <p className="text-gray-400 text-sm line-clamp-2 mb-2">{evt.details}</p>
                   <div className="flex flex-wrap gap-2 text-xs">
@@ -179,6 +188,15 @@ const FlagshipManagement = () => {
                   </div>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleToggle(evt.id, evt.active)}
+                    className={evt.active ? 'border-green-500 text-green-500 hover:bg-green-500/10' : 'border-gray-600 text-gray-400 hover:bg-gray-600/10'}
+                    data-testid={`toggle-${evt.id}`}
+                  >
+                    <Power className="h-4 w-4 mr-1" /> {evt.active ? 'On' : 'Off'}
+                  </Button>
                   <Button size="sm" variant="outline" onClick={() => { setAnnParentId(evt.id); setEditingAnn(null); setAnnForm({ title: '', photo_url: '', details: '' }); setAnnDialogOpen(true); }} data-testid={`add-ann-${evt.id}`}>
                     <Bell className="h-4 w-4 mr-1" /> Add Update
                   </Button>

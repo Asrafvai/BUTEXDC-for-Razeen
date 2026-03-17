@@ -248,6 +248,7 @@ class FlagshipEvent(BaseModel):
     details: str
     event_link: Optional[str] = None
     preregister_link: Optional[str] = None
+    active: bool = True
     archived: bool = False
     created_at: str
 
@@ -1212,6 +1213,11 @@ async def get_flagship_events():
     events = await db.flagship_events.find({"archived": False}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return [FlagshipEvent(**e) for e in events]
 
+@api_router.get("/flagship-events/active", response_model=List[FlagshipEvent])
+async def get_active_flagship_events():
+    events = await db.flagship_events.find({"archived": False, "active": True}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [FlagshipEvent(**e) for e in events]
+
 @api_router.get("/flagship-events/{event_id}")
 async def get_flagship_event(event_id: str):
     event = await db.flagship_events.find_one({"id": event_id, "archived": False}, {"_id": 0})
@@ -1229,6 +1235,7 @@ async def create_flagship_event(data: FlagshipEventCreate, current_user: dict = 
         "details": data.details,
         "event_link": data.event_link,
         "preregister_link": data.preregister_link,
+        "active": True,
         "archived": False,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -1258,6 +1265,15 @@ async def archive_flagship_event(event_id: str, current_user: dict = Depends(req
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Flagship event not found")
     return {"message": "Flagship event archived"}
+
+@api_router.patch("/admin/flagship-events/{event_id}/toggle")
+async def toggle_flagship_event(event_id: str, current_user: dict = Depends(require_admin)):
+    event = await db.flagship_events.find_one({"id": event_id}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=404, detail="Flagship event not found")
+    new_active = not event.get("active", True)
+    await db.flagship_events.update_one({"id": event_id}, {"$set": {"active": new_active}})
+    return {"message": f"Flagship event {'activated' if new_active else 'deactivated'}", "active": new_active}
 
 @api_router.get("/flagship-events/{event_id}/announcements", response_model=List[FlagshipAnnouncement])
 async def get_flagship_announcements(event_id: str):

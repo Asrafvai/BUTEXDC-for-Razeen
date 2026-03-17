@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getHomepageContent, getLeadership, getAnnouncements, getSuccessEvents, getEvents, getFlagshipEvents } from '../lib/api';
+import { getHomepageContent, getLeadership, getAnnouncements, getSuccessEvents, getEvents, getActiveFlagshipEvents } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { ArrowRight, Users, Trophy, BookOpen, Sun, Moon, Calendar, Star } from 'lucide-react';
@@ -32,7 +32,7 @@ const HomePage = () => {
         getAnnouncements(),
         getSuccessEvents(),
         getEvents(),
-        getFlagshipEvents()
+        getActiveFlagshipEvents()
       ]);
       
       const contentMap = {};
